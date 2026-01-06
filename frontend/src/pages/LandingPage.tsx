@@ -1,13 +1,104 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, Briefcase, Calendar, ChevronRight, Star, ArrowRight, GraduationCap, CheckCircle } from 'lucide-react';
+import { gsap } from 'gsap';
 import Navbar from '../components/Navbar';
 
 const LandingPage: React.FC = () => {
+    const [isMobile, setIsMobile] = useState(false);
+    const revealImageRef = useRef<HTMLDivElement>(null);
+    const cursorPosRef = useRef({ x: 0, y: 0 });
+    const currentPosRef = useRef({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    useEffect(() => {
+        if (isMobile) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            cursorPosRef.current = { x: e.clientX, y: e.clientY };
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+
+        const animateReveal = () => {
+            if (!revealImageRef.current) return;
+            
+            // Very high interpolation factor for tight, responsive following
+            currentPosRef.current.x += (cursorPosRef.current.x - currentPosRef.current.x) * 0.45;
+            currentPosRef.current.y += (cursorPosRef.current.y - currentPosRef.current.y) * 0.45;
+
+            gsap.set(revealImageRef.current, {
+                x: currentPosRef.current.x,
+                y: currentPosRef.current.y,
+                xPercent: -50,
+                yPercent: -50,
+            });
+
+            requestAnimationFrame(animateReveal);
+        };
+
+        animateReveal();
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, [isMobile]);
+
     return (
         <div className="min-h-screen bg-white">
             <Navbar />
+            
+            {/* SVG Filters and Clip Path */}
+            <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+                <defs>
+                    <clipPath id="heroTextClip">
+                        <text
+                            x="50%"
+                            y="35%"
+                            textAnchor="middle"
+                            fontSize="clamp(2rem, 6vw, 4.5rem)"
+                            fontWeight="800"
+                        >
+                            Connect, Grow, Succeed
+                        </text>
+                        <text
+                            x="50%"
+                            y="45%"
+                            textAnchor="middle"
+                            fontSize="clamp(2rem, 6vw, 4.5rem)"
+                            fontWeight="800"
+                        >
+                            with Your Alumni Network
+                        </text>
+                    </clipPath>
+                </defs>
+            </svg>
+
+            {/* Cursor Following Image Reveal (Desktop Only) */}
+            {!isMobile && (
+                <div
+                    ref={revealImageRef}
+                    style={{
+                        backgroundImage: 'url(https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80)',
+                        position: 'fixed',
+                        width: '400px',
+                        height: '400px',
+                        borderRadius: '50%',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        pointerEvents: 'none',
+                        zIndex: 50,
+                        mixBlendMode: 'screen',
+                        opacity: 1,
+                        clipPath: 'url(#heroTextClip)',
+                        filter: 'brightness(1.2) contrast(1.1)',
+                    }}
+                />
+            )}
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-28 overflow-hidden bg-gradient-to-b from-off-white to-white">
